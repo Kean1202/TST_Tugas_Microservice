@@ -1,0 +1,87 @@
+{
+  "speeches": [
+    {
+      "speech_id": 1,
+      "student_id": 12,
+      "student_name": "Kean",
+      "speech_topic": "Philosophy",
+      "speech_date": "2023-06-17 00:00:00",
+      "argument_1": "Bubur sebaiknya tidak diaduk",
+      "argument_1_quality": 2,
+      "argument_2": "Es teh manis gabisa anget",
+      "argument_2_quality": 5,
+      "substance_1": "Kalau diaduk kerupuknya jadi basah",
+      "substance_1_quality": 4,
+      "substance_2": "Kalo anget namanya bukan es",
+      "substance_2_quality": 3,
+      "structure_type": "structured",
+      "structure_quality": 4,
+      "mannerism_confidence": 3,
+      "mannerism_voice": 2
+    },
+    {
+      "speech_id": 2,
+      "student_id": 100,
+      "student_name": "Bo Seo",
+      "speech_topic": "International Relations",
+      "speech_date": "2021-01-01 00:00:00",
+      "argument_1": "The justification of a socialist revolution by the world's poor",
+      "argument_1_quality": 5,
+      "argument_2": "The effects of an international scale revolution",
+      "argument_2_quality": 5,
+      "substance_1": "Historical context, systematic oppression",
+      "substance_1_quality": 5,
+      "substance_2": "Ideologies and Practicalities",
+      "substance_2_quality": 5,
+      "structure_type": "structured",
+      "structure_quality": 5,
+      "mannerism_confidence": 5,
+      "mannerism_voice": 5
+    },
+    {
+      "speech_id": 3,
+      "student_id": 15,
+      "student_name": "Komang",
+      "speech_topic": "Politics",
+      "speech_date": "2023-01-01 00:00:00",
+      "argument_1": "Why i should run for president",
+      "argument_1_quality": 5,
+      "argument_2": "Why the current candidates are suboptimal",
+      "argument_2_quality": 5,
+      "substance_1": "i can beat Ganjar in a game of chess",
+      "substance_1_quality": 3,
+      "substance_2": "Anies cant play basketball",
+      "substance_2_quality": 1,
+      "structure_type": "Structured",
+      "structure_quality": 5,
+      "mannerism_confidence": 5,
+      "mannerism_voice": 5
+    }
+  ],
+  "feedback": [
+    {
+      "speech_id": 1,
+      "student_id": 12,
+      "score": 23,
+      "area_of_improvement_1": "Identifying and creating the first argument",
+      "area_of_improvement_2": "mannerism: voice",
+      "overall_fedback": "Decent speech that could use some fixes in certain areas"
+    },
+    {
+      "speech_id": 3,
+      "student_id": 15,
+      "score": 25,
+      "area_of_improvement_1": "Work on analyzing and improving your first argument",
+      "overall_feedback": "Great Speech! You have solid fundamentals and good execution. Work on taking it to the next level",
+      "area_of_improvement_2": "Work on adding weight adding substance to your second argument"
+    },
+    {
+      "speech_id": 3,
+      "student_id": 15,
+      "score": 29,
+      "area_of_improvement_1": "Work on adding weight and adding substance to your second argument",
+      "overall_feedback": "Great Speech! You have solid fundamentals and good execution. Work on taking it to the next level",
+      "area_of_improvement_2": "Work on adding weight and adding substance to your first argument"
+    }
+  ]
+}
