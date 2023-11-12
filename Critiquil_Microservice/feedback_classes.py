@@ -41,11 +41,7 @@ class Speech(BaseModel):
 
 class Feedback(BaseModel):
     speech_id: int
-    student_id: int
-    score: int
-    area_of_improvement_1: str
-    area_of_improvement_1: str
-    overall_feedback: str
+
 
 def switch_score(score):
     if score > 30:

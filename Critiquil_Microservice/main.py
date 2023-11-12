@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import json
 from feedback_classes import *
-
+from auth import *
 
 json_file = "speeches_and_feedback.json"
 
@@ -10,6 +11,92 @@ with open(json_file, "r") as read_file:
 
 app = FastAPI()
 
+# AUTHORIZATION PROCESS
+async def get_current_user(token: str = Depends(oauth_2_scheme)):
+    credential_exception = HTTPException(status_code = status.HTTP_401_UNAUTHORIZED, 
+                                         detail="coud not validate user credentials", headers={"WWW-Authenticate": "Bearer"})
+    try:
+        # parse out the token and decode it
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        # check if the user exists
+        if username is None:
+            raise credential_exception
+        # get the user data
+        token_data = TokenData(username = username)
+    except JWTError:
+        raise credential_exception
+    
+    # checks if the user exists in the database
+    user = get_user(users_data, username = token_data.username)
+   
+    if user is None:
+        raise credential_exception
+    
+    return user
+
+# check if the user is enabled or disabled
+async def get_current_active_user(current_user: UserInDB = Depends(get_current_user)):
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+
+    return current_user
+
+# writing tokens
+@app.post("/token", response_model=Token)
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(users_data, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect username or password",
+                            headers={"WWW-Authenticate": "Bearer"})
+    
+    access_token_expires = timedelta(minutes= ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": user.username}, expires_delta= access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# # get current user
+# @app.get("/users/me/", response_model=User)
+# async def read_users_me(current_user: User = Depends(get_current_active_user)):
+#     return current_user
+
+# Register a new user
+@app.post('/register')
+async def register_user(new_user: User, current_user: User = Depends(get_current_active_user)):
+    user_dict = new_user.dict()
+    user_found = False
+
+    for user in users_data:
+        if new_user.username == user or new_user.user_id == user[0]:
+            user_found = True
+    
+    if not user_found:
+        createdUser = UserCreate()
+        createdUser.user_id = new_user.user_id
+        createdUser.username = new_user.username
+        createdUser.password_preprocessed = ""
+        createdUser.password_hash = get_password_hash(new_user.password_preprocessed)
+        createdUser.isTutor = 1
+        createdUser.isAdmin = 0
+        createdUser.disabled = 0
+
+        finalNewUser = vars(createdUser)
+
+        users_data[new_user.username]= finalNewUser
+
+        with open("users.json", "w") as write_file:
+            json.dump(users_data, write_file, indent=2)
+
+        return finalNewUser
+
+    else:
+        return "Username or ID taken"
+
+
+# @app.get("/users/me/items")
+# async def read_own_items(current_user: User = Depends(get_current_active_user)):
+#     return [{"item_id": 1, "owner": current_user}]
+
+
 # Home
 @app.get('/')
 async def read_home():
@@ -17,12 +104,12 @@ async def read_home():
 
 # returns all speeches listed in the JSON data
 @app.get('/speeches')
-async def read_all_speeches():
+async def read_all_speeches(current_user: User = Depends(get_current_active_user)):
     return speech_feedback_data['speeches']
 
 # Gets all speeches made by a certain student
 @app.get('/speeches/students/{student_id}')
-async def read_speech_student_id(student_id: int):
+async def read_speech_student_id(student_id: int, current_user: User = Depends(get_current_active_user)):
     found_speech = False
     speech_arr = []
     for speech in speech_feedback_data["speeches"]:
@@ -39,7 +126,7 @@ async def read_speech_student_id(student_id: int):
 
 # Chooses a specific speech ID
 @app.get('/speeches/{speech_id}')
-async def read_speech_id(id: int):
+async def read_speech_id(id: int, current_user: User = Depends(get_current_active_user)):
     for speech in speech_feedback_data["speeches"]:
         if speech["speech_id"] == id:
             return speech
@@ -52,7 +139,7 @@ async def read_speech_id(id: int):
 
 # adds one speech to the JSON file
 @app.post('/speeches')
-async def add_speech(speech: Speech):
+async def add_speech(speech: Speech, current_user: User = Depends(get_current_active_user)):
     speech_dict = speech.dict()
     speech_found = False
 
@@ -74,7 +161,7 @@ async def add_speech(speech: Speech):
 
 # Updates one of the speeches (has to be an existing speech)
 @app.put('/speeches')
-async def update_speech(speech: Speech):
+async def update_speech(speech: Speech, current_user: User = Depends(get_current_active_user)):
     speech_dict = speech.dict()
     speech_found = False
     for speech_idx, speech in enumerate(speech_feedback_data["speeches"]):
@@ -94,7 +181,7 @@ async def update_speech(speech: Speech):
 
 # Deletes a speech
 @app.delete('/speeches/{speech_id}')
-async def delete_speech(speech_id: int):
+async def delete_speech(speech_id: int, current_user: User = Depends(get_current_active_user)):
     speech_found = False
     for speech_idx, speech in enumerate(speech_feedback_data["speeches"]):
         if speech["speech_id"] == speech_id:
@@ -113,12 +200,12 @@ async def delete_speech(speech_id: int):
 
 # returns all feedback listed in the JSON data
 @app.get('/feedback')
-async def read_all_feedback():
+async def read_all_feedback(current_user: User = Depends(get_current_active_user)):
     return speech_feedback_data["feedback"]
 
 # Chooses a specific feedback based on speech ID
 @app.get('/feedback/{speech_id}}')
-async def read_feedback(speechID: int):
+async def read_feedback(speechID: int, current_user: User = Depends(get_current_active_user)):
     for feedback in speech_feedback_data["feedback"]:
         if feedback["speech_id"] == speechID:
             return feedback
@@ -128,7 +215,7 @@ async def read_feedback(speechID: int):
     )
 
 @app.post('/feedback')
-async def generate_feedback(feedback: Feedback):
+async def generate_feedback(feedback: Feedback, current_user: User = Depends(get_current_active_user)):
     feedback_dict = feedback.dict()
     speech_found = False
     feedback_found = False
@@ -177,7 +264,7 @@ async def generate_feedback(feedback: Feedback):
     )
 
 @app.put('/feedback')
-async def update_feedback(feedback: Feedback):
+async def update_feedback(feedback: Feedback, current_user: User = Depends(get_current_active_user)):
     feedback_dict = feedback.dict()
     speech_found = False
     feedback_found = False
@@ -228,7 +315,7 @@ async def update_feedback(feedback: Feedback):
     )
 
 @app.delete('/feedback/{speech_id}')
-async def delete_feedback(speech_id: int):
+async def delete_feedback(speech_id: int, current_user: User = Depends(get_current_active_user)):
     feedback_found = False
     for feedback_idx, feedback in enumerate(speech_feedback_data["feedback"]):
         if feedback["speech_id"] == speech_id:
