@@ -50,7 +50,14 @@ class UserCreate():
 
 
 class UserInDB(User):
+    user_id: int 
+    username: str
+    name: str or None = None
+    password_preprocessed: str
     password_hash: str
+    isTutor: bool
+    isAdmin: bool
+    disabled: bool or None = None
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
