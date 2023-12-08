@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-import json
+import json, requests
 from feedback_classes import *
 from auth import *
 
@@ -10,6 +10,21 @@ with open(json_file, "r") as read_file:
     speech_feedback_data = json.load(read_file)
 
 app = FastAPI()
+
+# Accessing Quizzma Services
+external_service_link = "http://20.247.235.81"
+
+def get_token():
+    token_url = external_service_link+"/token"
+    token_response = requests.post(token_url, data={"username": "Kean", "password": "test123"})
+    token = token_response.json().get("access_token")
+    return token
+
+def get_questions():
+    headers= {"Authorization": f'Bearer {get_token()}'}
+    questions = requests.get(external_service_link+"/questions", headers=headers)
+    return questions.json()
+
 
 # AUTHORIZATION PROCESS
 async def get_current_user(token: str = Depends(oauth_2_scheme)):
@@ -371,6 +386,56 @@ async def delete_feedback(speech_id: int, current_user: User = Depends(get_curre
     else:
         return {"message": "You are not authorized as a tutor, you may not delete feedback from the database"}
 
+# Get questions from Quizzma Service
+@app.get("/getTestQuestions")
+async def get_test(User = Depends(get_current_active_user)):
+    all_questions = get_questions()
+
+    skimmed_questions = all_questions[0]["question"]
+
+    debate_questions = { "questions": [
+
+        ]
+    }
+
+    for i in range(5,10):
+        for question in skimmed_questions:
+            if question["id"] == i:
+                debate_questions["questions"].append({question["id"], question["question"]})
+
+    return debate_questions
+
+# Submit test and get score
+@app.get("/takeTest")
+async def take_test(answer1: str, answer2: str, answer3:str, answer4: str, answer5:str, User = Depends(get_current_active_user)):
+    all_questions = get_questions()
+    skimmed_questions = all_questions[0]["question"]
+    score = 0
+    answers = []
+    scores = []
+    for i in range(5,10):
+        for question in skimmed_questions:
+            if question["id"] == i:
+                answers.append(question["correct_answer"])
+                scores.append(question["score_weight"])
+    
+    if answer1.upper() == answers[0]:
+        score+= scores[0]
+
+    if answer2.upper() == answers[1]:
+        score+= scores[1]
+
+    if answer3.upper() == answers[2]:
+        score+= scores[2]
+    
+    if answer4.upper() == answers[3]:
+        score+= scores[3]
+
+    if answer5.upper() == answers[4]:
+        score+= scores[4]
+
+    print(f"Your score is: {score}")
+    return score
 
 
 
