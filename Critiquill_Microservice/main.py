@@ -12,7 +12,7 @@ with open(json_file, "r") as read_file:
 app = FastAPI()
 
 # Accessing Quizzma Services
-external_service_link = "http://20.247.235.81"
+external_service_link = "http://tubeststrdt.a3h4epepd8gaf9ay.southeastasia.azurecontainer.io"
 
 def get_token():
     token_url = external_service_link+"/token"
@@ -391,33 +391,35 @@ async def delete_feedback(speech_id: int, current_user: User = Depends(get_curre
 async def get_test(User = Depends(get_current_active_user)):
     all_questions = get_questions()
 
-    skimmed_questions = all_questions[0]["question"]
+    skimmed_questions = all_questions[3]["question"]    # ID 3 adalah set yang dimilii critiquill
 
     debate_questions = { "questions": [
 
         ]
     }
 
-    for i in range(5,10):
+    for i in range(0, len(skimmed_questions)):
         for question in skimmed_questions:
-            if question["id"] == i:
+            if question["id"] == i+1:
                 debate_questions["questions"].append({question["id"], question["question"]})
 
     return debate_questions
 
+
 # Submit test and get score
 @app.get("/takeTest")
-async def take_test(answer1: str, answer2: str, answer3:str, answer4: str, answer5:str, User = Depends(get_current_active_user)):
+async def take_test(answer1: str, answer2: str, answer3:str, answer4: str, answer5:str, answer6: str, User = Depends(get_current_active_user)):
     all_questions = get_questions()
-    skimmed_questions = all_questions[0]["question"]
+    skimmed_questions = all_questions[3]["question"] # ID 3 adalah set yang dimilii critiquill
     score = 0
     answers = []
     scores = []
-    for i in range(5,10):
+    for i in range(0, len(skimmed_questions)):
         for question in skimmed_questions:
-            if question["id"] == i:
+            if question["id"] == i+1:
                 answers.append(question["correct_answer"])
                 scores.append(question["score_weight"])
+    
     
     if answer1.upper() == answers[0]:
         score+= scores[0]
@@ -433,6 +435,9 @@ async def take_test(answer1: str, answer2: str, answer3:str, answer4: str, answe
 
     if answer5.upper() == answers[4]:
         score+= scores[4]
+    
+    if answer6.upper() == answers[5]:
+        score+= scores[5]
 
     print(f"Your score is: {score}")
     return score
